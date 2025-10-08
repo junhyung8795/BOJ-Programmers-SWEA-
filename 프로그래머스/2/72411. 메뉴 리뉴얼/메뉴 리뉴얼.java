@@ -1,7 +1,6 @@
 import java.util.*;
 
 class Solution {
-    static HashSet<Character> charSet = new HashSet<>(); 
     static HashMap<String, Integer> map =  new LinkedHashMap<>();
     
     static String[] staticOrders;
