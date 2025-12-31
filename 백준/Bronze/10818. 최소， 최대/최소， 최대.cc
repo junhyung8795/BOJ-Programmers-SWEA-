@@ -10,11 +10,16 @@ int main(){
     cin >> N;
 
     int arr[N];
+    int m = INT_MIN;
+    int n = INT_MAX;
+    
     for(int i =0 ; i < N; i++){
         cin >> arr[i];
+        m = max(m, arr[i]);
+        n = min(n, arr[i]);
     }
 
-    sort(arr, arr + N);
-    cout << arr[0] <<" " << arr[N - 1];
+    
+    cout << n <<" " <<m;
     return 0;
 }
