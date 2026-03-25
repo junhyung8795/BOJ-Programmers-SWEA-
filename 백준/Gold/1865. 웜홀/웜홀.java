@@ -1,120 +1,113 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.StringTokenizer;
- 
-class Road {
-    int end;
-    int weight;
- 
-    Road(int end, int weight) {
-        this.end = end;
-        this.weight = weight;
-    }
-}
- 
-public class Main {
-    static int N, M, W;
-    static int[] dist;
-    static ArrayList<ArrayList<Road>> a;
-    static final int INF = 987654321;
- 
-    public static void main(String[] args) throws IOException {
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
-        StringTokenizer st;
- 
-        int TC = Integer.parseInt(br.readLine());
-        StringBuilder sb = new StringBuilder();
-        while (TC-- > 0) {
-            st = new StringTokenizer(br.readLine());
-            N = Integer.parseInt(st.nextToken());
-            M = Integer.parseInt(st.nextToken());
-            W = Integer.parseInt(st.nextToken());
- 
-            dist = new int[N + 1];
-            a = new ArrayList<>();
-            for (int i = 0; i <= N; i++) {
-                a.add(new ArrayList<>());
-            }
- 
-            for (int i = 0; i < M + W; i++) {
-                st = new StringTokenizer(br.readLine());
-                int start = Integer.parseInt(st.nextToken());
-                int end = Integer.parseInt(st.nextToken());
-                int weight = Integer.parseInt(st.nextToken());
- 
-                if (i < M) { // 도로는 양방향 그래프
-                    a.get(start).add(new Road(end, weight));
-                    a.get(end).add(new Road(start, weight));
-                } else { // 웜홀은 단방향 그래프
-                    a.get(start).add(new Road(end, -weight));
-                }
-            }
- 
-            boolean isMinusCycle = false;
-            for (int i = 1; i <= N; i++) {
-                if (bellmanFord(i)) {
-                    isMinusCycle = true;
-                    sb.append("YES\n");
-                    break;
-                }
-            }
- 
-            if (!isMinusCycle) {
-                sb.append("NO\n");
-            }
+import java.io.*;
+import java.util.*;
+
+class Main{
+    //테케수
+    static int T;
+    //각 테케안의 지점수, 도로수, 웜홀 수
+    static int N;
+    static int M;
+    static int W;
+    static int start;
+    //간선을 담는 그래프
+    static ArrayList<Edge> graph;
+    static long[] dist;
+    //간선을 나타내는 클래스 
+    static class Edge{
+        int u;
+        int v;
+        int w;
+        public Edge(int u, int v, int w){
+            this.u = u;
+            this.v = v;
+            this.w = w;
         }
- 
-        bw.write(sb.toString());
-        bw.flush();
-        bw.close();
-        br.close();
+        
+        @Override
+        public String toString(){
+            return "u = " + u + " v = " + v + " w = " + w; 
+        }
+    }
+    public static void main(String[] args) throws IOException{
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        
+        T = Integer.parseInt(br.readLine());
+        for(int t = 0; t < T; t++){
+            //각 테케안에서 로직 실행
+            String[] inp = br.readLine().split(" ");  
+            N = Integer.parseInt(inp[0]);
+            M = Integer.parseInt(inp[1]);
+            W = Integer.parseInt(inp[2]);
+            
+            //그래프 초기화, Edge들이 들어감.
+            graph = new ArrayList<>();
+            
+            //도로라는 간선 정보 입력
+            for(int i = 0; i < M; i++){
+                String[] eInp = br.readLine().split(" ");
+                int u = Integer.parseInt(eInp[0]);
+                int v = Integer.parseInt(eInp[1]);
+                int w = Integer.parseInt(eInp[2]);
+                //도로는 양방향 간선
+                graph.add(new Edge(u,v,w));
+                graph.add(new Edge(v,u,w));
+            }
+            
+            //웜홀이라는 간선 정보입력
+            for(int i = 0 ; i < W; i++){
+                String[] eInp = br.readLine().split(" ");
+                int u = Integer.parseInt(eInp[0]);
+                int v = Integer.parseInt(eInp[1]);
+                int w = Integer.parseInt(eInp[2]);
+                //웜홀은 단방향 간선
+                graph.add(new Edge(u,v,-w));
+                
+            }
+            
+            //dist배열 초기화
+            //1번 지점을 출발지점으로 놓고. 만약 음의 사이클이 생긴다면 YES 아니면 NO출력
+            dist = new long[N + 1];
+            //일단 다른 지점들 전부 못간다고 가정
+            Arrays.fill(dist, Integer.MAX_VALUE);
+            //시작점은 0의 거리를 가짐
+            dist[1] = 0l;
+            
+            String result = BF();
+                
+            
+            
+            System.out.println(result);
+            
+        }
+        
+        
+        
     }
     
-    // 벨만포드 알고리즘
-    public static boolean bellmanFord(int start) {
-        Arrays.fill(dist, INF);
-        dist[start] = 0; // 시작점은 0으로 초기화.
-        boolean update = false;
-        
-        // (정점의 개수 - 1)번 동안 최단거리 초기화 작업을 반복함.
-        for (int i = 1; i < N; i++) {
-            update = false;
-            
-            // 최단거리 초기화.
-            for (int j = 1; j <= N; j++) {
-                for (Road road : a.get(j)) {
-                    if (dist[j] != INF && dist[road.end] > dist[j] + road.weight) {
-                        dist[road.end] = dist[j] + road.weight;
-                        update = true;
-                    }
-                }
-            }
-            
-            // 더 이상 최단거리 초기화가 일어나지 않았을 경우 반복문을 종료.
-            if (!update) {
-                break;
-            }
-        }
-        
-        // (정점의 개수 - 1)번까지 계속 업데이트가 발생했을 경우
-        // (정점의 개수)번도 업데이트 발생하면 음수 사이클이 일어난 것을 의미함.
-        if (update) {
-            for (int i = 1; i <= N; i++) {
-                for (Road road : a.get(i)) {
-                    if (dist[i] != INF && dist[road.end] > dist[i] + road.weight) {
-                        return true;
-                    }
+    public static String BF(){
+        //벨먼포드
+        for(int i = 0; i < N - 1;i++){
+            for(Edge edge: graph){
+                int u = edge.u;
+                int v = edge.v;
+                int w = edge.w;
+                
+                if(dist[u] + w < dist[v]){
+                    dist[v] = dist[u] + w;
                 }
             }
         }
- 
-        return false;
+        
+        for(Edge edge: graph){
+                int u = edge.u;
+                int v = edge.v;
+                int w = edge.w;
+                
+                if( dist[u] + w < dist[v]){
+                    return "YES";
+                }
+            }
+        
+        return "NO";
     }
- 
 }
