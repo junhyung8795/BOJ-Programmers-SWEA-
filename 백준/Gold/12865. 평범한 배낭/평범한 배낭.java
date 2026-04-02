@@ -1,44 +1,38 @@
 import java.io.*;
 import java.util.*;
-
 class Main{
-    public static void main(String[] args) throws IOException{
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    public static void main(String[] args)throws IOException{
+        BufferedReader br = new  BufferedReader(new InputStreamReader(System.in));
+
+        //n,k        
         String[] s = br.readLine().split(" ");
-        int N = Integer.parseInt(s[0]);
-        int K = Integer.parseInt(s[1]);
-        
-        //W, V입력 받아서 ArrayList넣기
-        ArrayList<int[]> arrWV = new ArrayList<>();
-        for(int i = 0; i < N; i++){
+        int n = Integer.parseInt(s[0]);
+        int k = Integer.parseInt(s[1]);
+        //w,v
+        List<List<Integer>> list = new ArrayList<>();
+        for(int i = 0; i < n; i++){
+            list.add(new ArrayList<>());
             String[] s1 = br.readLine().split(" ");
-            int W = Integer.parseInt(s1[0]);
-            int V = Integer.parseInt(s1[1]);
-            arrWV.add(new int[]{W, V});
+            int w = Integer.parseInt(s1[0]);
+            int v = Integer.parseInt(s1[1]);
+            list.get(i).add(w);
+            list.get(i).add(v);
         }
-        //arrWV무게가 작은 순으로 나열
-        arrWV.sort((a, b) -> a[0] - b[0]);
+        list.sort((a,b) -> Integer.compare(a.get(0), b.get(0)));
         
-        //dp테이블 선언
-        int[][] dp = new int[N + 1][100000 + 1];
-        
-        //dp테이블 채우기
-        for(int i = 1; i < N + 1; i++){
-            //arrWV순회하면서 1개, 2개, 3개 고려를 시작
-            int curW = arrWV.get(i - 1)[0];
-            int curV = arrWV.get(i - 1)[1];
-            
-            for(int j = 0; j < curW; j++){
-                dp[i][j] = dp[i - 1][j];
-            }
-            for(int j = curW; j < dp[0].length; j++){
-                dp[i][j] = Math.max(dp[i - 1][j - curW] + curV , dp[i - 1][j]);
+        int[] dp = new int[k + 1];
+        for(int i =0; i < n; i++){
+            int w = list.get(i).get(0);
+            int v = list.get(i).get(1);
+            if(w <= k){
+                for(int col = k; col >= w; col--){
+                    dp[col] = Math.max(dp[col], dp[col - w] + v);
+                }    
             }
             
         }
-        
-        System.out.println(dp[N][K]);
-        
+
+        System.out.println(dp[k]);
         
         
     }
