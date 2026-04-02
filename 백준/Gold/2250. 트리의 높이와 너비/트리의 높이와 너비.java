@@ -1,28 +1,14 @@
-import java.util.*;
-import java.lang.*;
 import java.io.*;
+import java.util.*;
 
-// The main method must be in a class named "Main".
-class Main {
+class Main{
     static int N;
-    static Child[] graph;
-    static Parent[] parents;
+    static Parent[] parent;
+    static Child[] child;
+    static ArrayList<ArrayList<Integer>> level = new ArrayList<>();
     static int root;
-    static ArrayList<Integer>[] level;
-    static int[][] cntLeftRight;
     static int[] myCol;
-    static class Child{
-        int left;
-        int right;
-        public Child(int left, int right){
-            this.left = left;
-            this.right = right;
-        }
-        @Override
-        public String toString(){
-            return "Child " +"left = " + left + " right = " + right;
-        }
-    }
+    static int colNum;
     static class Parent{
         int left;
         int right;
@@ -30,154 +16,123 @@ class Main {
             this.left = left;
             this.right = right;
         }
+
         @Override
         public String toString(){
-            return "Parent " + "left = " + left + " right = " + right;
+            return "parent : " + "left = " + left + " right = " + right;
+        }
+    }
+    static class Child{
+        int left;
+        int right;
+        public Child(int left, int right){
+            this.left = left;
+            this.right = right;
+        }
+
+        @Override
+        public String toString(){
+            return "child : " + "left = " + left + " right = " + right;
         }
     }
     public static void main(String[] args) throws IOException{
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         N = Integer.parseInt(br.readLine());
 
-        graph = new Child[N + 1];
-        parents = new Parent[N + 1];
-        for(int i = 1; i <= N;i++){
-            graph[i] = new Child(-1, -1);
-            parents[i] = new Parent(-1,-1);
-        }
-        level = new ArrayList[N + 1];
-        cntLeftRight = new int[N + 1][2];
+        parent = new Parent[N + 1];
+        child = new Child[N + 1];
         myCol = new int[N + 1];
+
         
-        for(int i = 1; i <= N; i++){
+        for(int i = 0; i < N; i++){
             String[] s = br.readLine().split(" ");
-            int parent = Integer.parseInt(s[0]);
-            int left = Integer.parseInt(s[1]);
-            int right = Integer.parseInt(s[2]);
-            graph[parent] = new Child(left, right);
-            if(left != -1)parents[left] = new Parent(-1, parent);
-            if(right != -1)parents[right] = new Parent(parent, -1);
-            level[i] = new ArrayList<>();
+            int p = Integer.parseInt(s[0]);
+            int leftChild = Integer.parseInt(s[1]);
+            int rightChild = Integer.parseInt(s[2]);
+            child[p] = new Child(leftChild, rightChild);
+            if(leftChild != -1)parent[leftChild] = new Parent(-1 ,p);
+
+            if(rightChild != -1)parent[rightChild] = new Parent(p, -1);
         }
 
-        //1. bfs로 레벨 알기
-        //루트노드 찾기
-        for(int i = 1; i <= N; i++){
-            //왼, 오 부모가 없으면 그 노드가 루트
-            if(parents[i].left == -1 && parents[i].right == -1){
+        //루트결정
+        for(int i = 1; i < N + 1; i++){
+            if(parent[i] == null){
+                //양쪽 부모가 없으므로 루트
                 root = i;
                 break;
             }
         }
+
+        //bfs로 각 노드의 레벨 구하기
         bfs();
-        cntChild(root);
-        //본인 좌표 채우기
-        for(int i = 1; i <= N; i++){
-            //자신의 오른쪽 부모가 있으면
-            int rightParent = parents[i].right;
-            int leftParent = parents[i].left;
-            if(rightParent != -1){
-                
-                myCol[i] = N - (returnAllRight(rightParent, 1) + cntLeftRight[i][1]);
-            } else if(leftParent != -1){//자신의 왼쪽 부모가 있으면
-                myCol[i] = returnAllLeft(leftParent, 0) + cntLeftRight[i][0] + 1;
-            }
-            
-        }
 
+        // System.out.println(level);
+        midOrder(root);
+        //중위순회
+        // System.out.println(Arrays.toString(myCol));
 
-        //각 레벨에서 제일 col이 큰 수와 작은 수를 찾는다.
-        int answerLevel = 1;
-        int answerWidth = 1;
-        for(int i = 2; i<=N; i++){
-            if(level[i].size() == 0) break;
-            level[i].sort((a,b) -> Integer.compare(myCol[a], myCol[b]));
-            // System.out.println("front = " + myCol[level[i].get(level[i].size() - 1)] + " back = " + myCol[level[i].get(0)]);
-            int candiWidth = myCol[level[i].get(level[i].size() - 1)] - myCol[level[i].get(0)] + 1;
-            if(candiWidth > answerWidth ){
-                answerWidth = candiWidth;
+        int answerWidth = -1;
+        int answerLevel = -1;
+        for(int i = 1;  i < level.size(); i++){
+            level.get(i).sort((a,b) -> Integer.compare(myCol[a], myCol[b]));
+            int l = level.get(i).get(0);
+            int m = level.get(i).get(level.get(i).size() - 1);
+            if(answerWidth < (myCol[m] - myCol[l]) + 1){
+                answerWidth = myCol[m] - myCol[l] + 1;
                 answerLevel = i;
             }
+
         }
-        System.out.println(answerLevel +" " + answerWidth);
-        
+
+        System.out.println(answerLevel + " " + answerWidth);
     }
 
     public static void bfs(){
         ArrayDeque<Integer> dq = new ArrayDeque<>();
-        dq.add(root);
         boolean[] visited = new boolean[N + 1];
         visited[root] = true;
-        int levelCnt = 1;
+        dq.add(root);
+        //넣으면서 방문처리
+        level.add(new ArrayList<>());
+
+        int curLevel = 0;
         while(!dq.isEmpty()){
-            ArrayList<Integer> list = new ArrayList<>();
-            int a = dq.size();
-            for(int i = 0; i < a; i++){
-                int curNode = dq.poll();
-                list.add(curNode);
-                level[levelCnt].add(curNode);
+            // System.out.println("dq = " + dq);
+            int s = dq.size();
+            curLevel += 1;
+            level.add(new ArrayList<>());
+            for(int i = 0 ; i < s; i++){
+                int popped = dq.poll();    
+                level.get(curLevel).add(popped);
+                if(child[popped]!= null && child[popped].left != -1)dq.add(child[popped].left);
+                if(child[popped] != null && child[popped].right != -1)dq.add(child[popped].right);
             }
-            for(int i = 0; i < list.size(); i++){
-                //list안의 요소들의 왼오 자식들을 넣는다.
-                if(graph[list.get(i)].left != -1){
-                    dq.add(graph[list.get(i)].left);
-                }
-                if(graph[list.get(i)].right != -1){
-                    dq.add(graph[list.get(i)].right);
-                }
-            }
-            levelCnt++;
+            
+
+            
+        }
+        
+    }
+
+    public static void midOrder(int start){
+        if(child[start].left != -1){
+            midOrder(child[start].left);
+        }
+        colNum++;
+        myCol[start] = colNum;
+        if(child[start].right != -1){
+            midOrder(child[start].right);
         }
     }
 
-    public static int cntChild(int start){
-        int left = 0;
-        int right = 0;
-        if(graph[start].left != -1){
-            left = cntChild(graph[start].left);
-        }
-        if(graph[start].right != -1){
-            right = cntChild(graph[start].right);
-        }
-        cntLeftRight[start][0] = left;
-        cntLeftRight[start][1] = right;
-        
-        return 1 + left + right;
-    }
 
-    public static int returnAllRight(int start, int from){
-        int total = 0;
-        if(from == 1){
-            total += 1;
-            //from 1이면 올라오는 방향 오른쪽. 
-            //0이면 올라오는 방향 왼쪽.
-            total += cntLeftRight[start][1]; 
-        }
-        if(parents[start].right != -1){
-            total += returnAllRight(parents[start].right, 1);
-        }else if(parents[start].left != -1){
-            total += returnAllRight(parents[start].left, 0);
-        }   
-        
-        
-        return total;
-    }
 
-    public static int returnAllLeft(int start, int from){
-        int total = 0;
-        if(from == 0){
-            total += 1;
-            //from 1이면 올라오는 방향 오른쪽. 
-            //0이면 올라오는 방향 왼쪽.
-            total += cntLeftRight[start][0]; 
-        }
-        if(parents[start].right != -1){
-            total += returnAllLeft(parents[start].right, 1);
-        }else if(parents[start].left != -1){
-            total += returnAllLeft(parents[start].left, 0);
-        }   
-        
-        return total;
-    }
-  
+
+
+
+
+
+
+    
 }
