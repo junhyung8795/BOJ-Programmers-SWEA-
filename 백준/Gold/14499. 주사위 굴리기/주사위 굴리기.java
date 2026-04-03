@@ -2,43 +2,16 @@ import java.io.*;
 import java.util.*;
 
 class Main{
-    static int[][] nextPos = {
-        {7,12,20,16},
-        {6,14,21, 18},
-        {5,13,22,19},
-        {4,15,23,17},
-        {8,3,6,5},
-        {10,2,4,7},
-        {9,1,7,4},
-        {11,0,5,6},
-        {15,4,16,20},
-        {14,6,19,22},
-        {13,5,18,21},
-        {12,7,17,23},
-        {0,11,14,13},
-        {2,10,12,15},
-        {1,9,15,12},
-        {3,8,13,14},
-        {19,18,0,8},
-        {18,19,3,11},
-        {16,17,1,10},
-        {17,16,2,9},
-        {21,22,8,0},
-        {23, 20, 10, 1},
-        {20,23,9,2},
-        {22,21,11,3}
-    };
-    static int[] floorForDir = {6,6,6,6,4,2,5,3,1,1,1,1,4,5,2,3,5,2,4,3,2,3,4,5};
     static int[] dice = {0,0,0,0,0,0,0};
     static int N;
     static int M;
     static int[][] graph;
-    static int curPos = 0;
     static int K;
     static int startRow;
     static int startCol;
     static int[] order;
     static int[][] dirs = {{0,1},{0,-1},{-1,0},{1,0}};
+    static int[] diceStatus = {1,6,5,2,3,4};
     public static void main(String[] args) throws IOException{
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
@@ -70,30 +43,54 @@ class Main{
             int dr = row + dirs[order[i]][0];
             int dc = col + dirs[order[i]][1];
             if(dr < 0 || dr >= N || dc < 0 || dc >= M)continue;
-            curPos = nextPos[curPos][order[i]];
             row = dr;
             col = dc;
-            // System.out.println("dr = " + dr + " dc  = " + dc);
+
+            diceRoll(order[i]);
+
+            
+            
             if(graph[row][col] == 0){
-                //바닥면은?floorForDir[curPos]
-                graph[row][col] = dice[floorForDir[curPos]];
-                System.out.println(dice[7-floorForDir[curPos]]);
+                graph[row][col] = dice[diceStatus[1]];
+                System.out.println(dice[diceStatus[0]]);
             } else{
-                dice[floorForDir[curPos]] = graph[row][col];
+                dice[diceStatus[1]] = graph[row][col];
                 graph[row][col] = 0;
-                System.out.println(dice[7-floorForDir[curPos]]);
+                System.out.println(dice[diceStatus[0]]);
             }
         }
-
-
-
-
-
-
-
-
-
-
         
     }
+    public static void diceRoll(int orderNum){
+            int tempR = diceStatus[4];
+            int tempL = diceStatus[5];
+            int tempT = diceStatus[0];
+            int tempBt = diceStatus[1];
+            int tempF = diceStatus[2];
+            int tempBa = diceStatus[3];
+            if(orderNum == 0){
+                //동
+                diceStatus[1] = tempR;
+                diceStatus[0] = tempL;
+                diceStatus[4] = tempT;
+                diceStatus[5] = tempBt;
+            } else if(orderNum == 1){
+                diceStatus[5] = tempT;
+                diceStatus[4] = tempBt;
+                diceStatus[0] = tempR;
+                diceStatus[1] = tempL;
+            } else if(orderNum == 2){
+                diceStatus[1] = tempBa;
+                diceStatus[0] = tempF;
+                diceStatus[3] = tempT;
+                diceStatus[2] = tempBt;
+            } else if(orderNum == 3){
+                diceStatus[1] = tempF;
+                diceStatus[3] = tempBt;
+                diceStatus[0] = tempBa;
+                diceStatus[2] = tempT;
+            }
+
+            
+        }
 }
